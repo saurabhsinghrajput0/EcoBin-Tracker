@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createBin, updateBin } from '../api';
+import { Plus, Edit3, MapPin, Navigation, BarChart2, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
   const [formData, setFormData] = useState({
     location: '',
     area: '',
+    lat: 40.7128,
+    lng: -74.0060,
     fillLevel: 0,
     status: 'Empty'
   });
@@ -24,6 +28,8 @@ const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
       setFormData({
         location: currentBin.location,
         area: currentBin.area,
+        lat: currentBin.lat || 40.7128,
+        lng: currentBin.lng || -74.0060,
         fillLevel: currentBin.fillLevel,
         status: currentBin.status
       });
@@ -31,6 +37,8 @@ const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
       setFormData({
         location: '',
         area: '',
+        lat: 40.7128,
+        lng: -74.0060,
         fillLevel: 0,
         status: 'Empty'
       });
@@ -64,7 +72,7 @@ const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
       }
       
       // Reset form and refresh list
-      setFormData({ location: '', area: '', fillLevel: 0, status: 'Empty' });
+      setFormData({ location: '', area: '', lat: 40.7128, lng: -74.0060, fillLevel: 0, status: 'Empty' });
       setCurrentBin(null);
       fetchBins();
       
@@ -77,63 +85,105 @@ const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
 
   const cancelEdit = () => {
     setCurrentBin(null);
-    setFormData({ location: '', area: '', fillLevel: 0, status: 'Empty' });
+    setFormData({ location: '', area: '', lat: 40.7128, lng: -74.0060, fillLevel: 0, status: 'Empty' });
     setError('');
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-soft border border-gray-100">
-      <div className="flex items-center gap-2 mb-6">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-          {currentBin ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-          )}
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+      className="glass-card p-6 md:p-8 relative overflow-hidden"
+    >
+      {/* Decorative gradient blur */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+      <div className="flex items-center gap-3 mb-8 relative z-10">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-emerald-100 dark:from-primary-900/40 dark:to-emerald-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shadow-sm">
+          {currentBin ? <Edit3 size={20} /> : <Plus size={20} />}
         </div>
-        <h2 className="text-xl font-bold text-gray-800">{currentBin ? 'Edit Bin' : 'Add New Bin'}</h2>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+            {currentBin ? 'Edit Bin Details' : 'Add New Bin'}
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {currentBin ? 'Update information for this specific bin location' : 'Register a new smart bin in the system'}
+          </p>
+        </div>
       </div>
       
-      {error && (
-        <div className="bg-red-50 text-red-700 p-3 rounded-xl border border-red-100 mb-4 text-sm font-medium">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="bg-red-50/80 dark:bg-red-500/10 text-red-700 dark:text-red-400 p-4 rounded-xl border border-red-100 dark:border-red-500/20 mb-6 text-sm font-medium flex items-center gap-2 backdrop-blur-sm"
+          >
+            <Activity size={16} /> {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
       
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4 mb-6">
+      <form onSubmit={handleSubmit} className="relative z-10">
+        <div className="space-y-5 mb-8">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Location *</label>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+              <MapPin size={14} className="text-gray-400" /> Location *
+            </label>
             <input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleChange}
               ref={locationInputRef}
-              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 text-gray-700"
-              placeholder="e.g. Central Park"
+              className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white placeholder:text-gray-400 shadow-inner backdrop-blur-sm"
+              placeholder="e.g. Central Park North Gate"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Area *</label>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+              <Navigation size={14} className="text-gray-400" /> Area *
+            </label>
             <input
               type="text"
               name="area"
               value={formData.area}
               onChange={handleChange}
-              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 text-gray-700"
-              placeholder="e.g. Downtown"
+              className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white placeholder:text-gray-400 shadow-inner backdrop-blur-sm"
+              placeholder="e.g. Downtown District"
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Fill Level (%)</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Latitude *</label>
+              <input
+                type="number"
+                step="any"
+                name="lat"
+                value={formData.lat}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white shadow-inner backdrop-blur-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Longitude *</label>
+              <input
+                type="number"
+                step="any"
+                name="lng"
+                value={formData.lng}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white shadow-inner backdrop-blur-sm"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                <BarChart2 size={14} className="text-gray-400" /> Fill Level (%)
+              </label>
               <input
                 type="number"
                 name="fillLevel"
@@ -141,22 +191,29 @@ const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
                 onChange={handleChange}
                 min="0"
                 max="100"
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 text-gray-700"
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white shadow-inner backdrop-blur-sm"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 text-gray-700 appearance-none cursor-pointer"
-              >
-                <option value="Empty">Empty</option>
-                <option value="Half Full">Half Full</option>
-                <option value="Full">Full</option>
-              </select>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                Status
+              </label>
+              <div className="relative">
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white appearance-none cursor-pointer shadow-inner backdrop-blur-sm font-medium"
+                >
+                  <option value="Empty">Empty (0-49%)</option>
+                  <option value="Half Full">Half Full (50-79%)</option>
+                  <option value="Full">Full (80-100%)</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -164,23 +221,23 @@ const BinForm = ({ fetchBins, currentBin, setCurrentBin, setSuccessMsg }) => {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="flex-1 bg-gradient-to-r from-primary to-primaryDark hover:from-primaryDark hover:to-primary text-white font-bold py-3 px-4 rounded-xl shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+            className="flex-1 bg-gradient-to-r from-primary-500 to-emerald-500 hover:from-primary-600 hover:to-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.4)] transform hover:-translate-y-0.5 transition-all duration-200 flex justify-center items-center gap-2"
           >
-            {currentBin ? 'Update Bin' : 'Add Bin'}
+            {currentBin ? 'Save Changes' : 'Register Bin'}
           </button>
           
           {currentBin && (
             <button
               type="button"
               onClick={cancelEdit}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition duration-200"
+              className="flex-1 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-600 font-bold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-sm"
             >
               Cancel
             </button>
           )}
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 };
 

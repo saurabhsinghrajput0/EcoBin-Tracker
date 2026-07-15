@@ -29,16 +29,18 @@ const getBin = async (req, res) => {
 // 3. Create a new bin
 const createBin = async (req, res) => {
   try {
-    const { location, area, fillLevel, status, lastCollected } = req.body;
+    const { location, area, fillLevel, status, lastCollected, lat, lng } = req.body;
     
     // Simple validation
-    if (!location || !area) {
-      return res.status(400).json({ message: 'Location and Area are required' });
+    if (!location || !area || lat === undefined || lng === undefined) {
+      return res.status(400).json({ message: 'Location, Area, lat, and lng are required' });
     }
     
     const newBin = new Bin({
       location,
       area,
+      lat,
+      lng,
       fillLevel,
       status,
       lastCollected
@@ -55,11 +57,11 @@ const createBin = async (req, res) => {
 const updateBin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { location, area, fillLevel, status, lastCollected } = req.body;
+    const { location, area, fillLevel, status, lastCollected, lat, lng } = req.body;
     
     const updatedBin = await Bin.findByIdAndUpdate(
       id, 
-      { location, area, fillLevel, status, lastCollected },
+      { location, area, lat, lng, fillLevel, status, lastCollected },
       { new: true, runValidators: true }
     );
     
@@ -90,10 +92,41 @@ const deleteBin = async (req, res) => {
   }
 };
 
+// 6. Get Aggregated Analytics for Dashboard
+const getBinStats = async (req, res) => {
+  try {
+    // Generate mock history since we don't have historical data structure yet
+    const monthlyData = [
+      { name: 'Jan', waste: 4000 },
+      { name: 'Feb', waste: 3000 },
+      { name: 'Mar', waste: 2000 },
+      { name: 'Apr', waste: 2780 },
+      { name: 'May', waste: 1890 },
+      { name: 'Jun', waste: 2390 },
+      { name: 'Jul', waste: 3490 },
+    ];
+    
+    const categoryData = [
+      { name: 'Plastic', value: 400 },
+      { name: 'Organic', value: 300 },
+      { name: 'Glass', value: 300 },
+      { name: 'Paper', value: 200 },
+    ];
+
+    res.status(200).json({
+      monthlyData,
+      categoryData,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error generating stats', error: error.message });
+  }
+};
+
 module.exports = {
   getBins,
   getBin,
   createBin,
   updateBin,
-  deleteBin
+  deleteBin,
+  getBinStats
 };

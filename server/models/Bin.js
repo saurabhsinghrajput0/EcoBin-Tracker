@@ -11,6 +11,14 @@ const binSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  lat: {
+    type: Number,
+    required: true
+  },
+  lng: {
+    type: Number,
+    required: true
+  },
   fillLevel: {
     type: Number,
     required: true,
@@ -27,7 +35,28 @@ const binSchema = new mongoose.Schema({
   lastCollected: {
     type: Date,
     default: Date.now
-  }
+  },
+  qrCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  imageUrl: {
+    type: String,
+    default: ''
+  },
+  collectionHistory: [
+    {
+      driverId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      collectedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ]
 }, { timestamps: true });
 
 const Bin = mongoose.model('Bin', binSchema);
